@@ -1,6 +1,6 @@
 {
-  "name": "vscode-open-all-files",
-  "displayName": "vscode-open-all-files",
+  "name": "open-all-files",
+  "displayName": "open-all-files",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -28,6 +28,17 @@
           "group": "openallfiles"
         }
       ]
+    },
+    "configuration": {
+      "id": "open-all-files",
+      "title": "Open All Files",
+      "properties": {
+        "openAllFiles.maxFiles": {
+          "default": 30,
+          "description": "Mximum number of files to open in one operation. If the folder has more files, the next command execution will start from it left last time.",
+          "type": "number"
+        }
+      }
     }
   },
   "scripts": {
