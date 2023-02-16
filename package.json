@@ -10,16 +10,25 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-open-all-files.helloWorld"
+    "onCommand:vscode-open-all-files.openAllFiles"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vscode-open-all-files.helloWorld",
-        "title": "Hello World"
+        "command": "vscode-open-all-files.openAllFiles",
+        "title": "Open all files"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-open-all-files.openAllFiles",
+          "when": "explorerResourceIsFolder",
+          "group": "openallfiles"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
