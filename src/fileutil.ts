@@ -1,52 +1,25 @@
-import * as fs from 'fs';
 import * as path from 'path';
-import { Uri, window, workspace } from 'vscode';
-
-function isPathIncluded(relPath:string, rootUri:Uri, isDirectory:boolean): boolean {
-  // TODO
-  return true;
-}
+import { RelativePattern, Uri, window, workspace } from 'vscode';
+import { extraExcludedFiles } from './extraExcludedfiles';
 
 export async function readDirectoryRecursively(fsPath:string): Promise<Array<Uri>> {
   const rootUri = getContainerRoot(fsPath);
   const relPath:string = path.relative(rootUri.fsPath, fsPath);
-  const paths = relPath === '' ? [] : normalizeFilePath(relPath).split('/');
-  return await _readDirectoryRecursively(rootUri, paths);
+
+  let excludeFiles:Array<string> = workspace.getConfiguration().get<Array<string>>('openAllFiles.excludeFiles') ?? [];
+  excludeFiles = [...excludeFiles, ...await extraExcludedFiles(rootUri)];
+  const openFiles:string = workspace.getConfiguration().get<string>('openAllFiles.openFiles') ?? '**';
+
+  const files = await workspace.findFiles(
+    path.join(relPath, openFiles),
+    excludeFiles.length ? new RelativePattern(rootUri, '{'+excludeFiles.join(',')+'}') : null
+  );
+  return files.sort((n1, n2) => n1.path.localeCompare(n2.path));
 }
 
 export function isSubDir(parent:string, dir:string): boolean {
   const relative = path.relative(parent, dir);
   return (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) ? true : false;
-}
-
-async function _readDirectoryRecursively(rootUri:Uri,
-    dirPathRelative:Array<string>): Promise<Array<Uri>> {
-  let res:Array<Uri> = [], children;
-  try {
-    children = await fs.promises.readdir(
-      path.join(rootUri.fsPath, ...dirPathRelative),
-      { withFileTypes: true }
-    );
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
-
-  for (let child of children.sort(compareDirent)) {
-    const childPath = [...dirPathRelative, child.name].join('/');
-    if (!isPathIncluded(childPath, rootUri, child.isDirectory())) { continue; }
-    if (child.isDirectory()) {
-      const res2 = await _readDirectoryRecursively(rootUri, [...dirPathRelative, child.name]);
-      res = [...res, ...res2];
-    } else {
-      res.push(Uri.file(path.join(rootUri.fsPath, ...dirPathRelative, child.name)));
-    }
-  }
-  return res;
-}
-
-export function normalizeFilePath(fsPath:string): string {
-  return path.sep === '\\' ? fsPath.replace(/\\/g, '/') : fsPath;
 }
 
 function getContainerRoot(fsPath:string): Uri {
@@ -60,19 +33,4 @@ function getContainerRoot(fsPath:string): Uri {
   const error = `Path '${fsPath} is not inside of any workplace folders`;
   window.showErrorMessage(error);
   throw new Error(error);
-}
-
-/**
- * Compares two directory entries, returns first files and then folders sorted alphabetically
- */
-export function compareDirent(n1:fs.Dirent, n2:fs.Dirent) {
-  if (n1.isDirectory() && !n2.isDirectory()) {
-    return 1;
-  }
-
-  if (!n1.isDirectory() && n2.isDirectory()) {
-    return -1;
-  }
-
-  return n1.name.localeCompare(n2.name);
 }
