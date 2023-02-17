@@ -1,8 +1,8 @@
 {
-  "name": "vscode-open-all-files",
-  "displayName": "open-all-files",
-  "description": "",
-  "version": "0.0.1",
+  "name": "vscode-bulk-problem-diagnostics",
+  "displayName": "bulk-problem-diagnostics",
+  "description": "Opens all files in a folder and all subfolders recursively in order to review problems. Splits large number of files in batches to prevent unloading.",
+  "version": "1.0",
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -15,61 +15,61 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-open-all-files.openAllFiles",
-        "title": "Open all files"
+        "command": "vscode-bulk-problem-diagnostics.openAllFiles",
+        "title": "Open all files for diagnostics"
       },
       {
-        "command": "vscode-open-all-files.openAllFilesContinue",
-        "title": "Open all files (continue)"
+        "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+        "title": "Open all files for diagnostics (continue)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "command": "vscode-open-all-files.openAllFiles",
+          "command": "vscode-bulk-problem-diagnostics.openAllFiles",
           "when": "explorerResourceIsFolder",
           "group": "explorerResourceIsFolder@1"
         },
         {
-          "command": "vscode-open-all-files.openAllFilesContinue",
-          "when": "explorerResourceIsFolder && resourcePath in openAllFiles.lastFolder",
+          "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+          "when": "explorerResourceIsFolder && resourcePath in bulkProblemDiagnostics.lastFolder",
           "group": "explorerResourceIsFolder@2"
         }
       ],
       "commandPalette": [
         {
-          "command": "vscode-open-all-files.openAllFiles",
+          "command": "vscode-bulk-problem-diagnostics.openAllFiles",
           "when": "never"
         },
         {
-          "command": "vscode-open-all-files.openAllFilesContinue",
-          "when": "openAllFiles.hasLastFolder"
+          "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+          "when": "bulkProblemDiagnostics.hasLastFolder"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "vscode-open-all-files.openAllFilesContinue",
+        "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
         "key": "ctrl+shift+alt+o",
         "mac": "cmd+shift+alt+o",
-        "when": "openAllFiles.hasLastFolder"
+        "when": "bulkProblemDiagnostics.hasLastFolder"
       }
     ],
     "configuration": {
-      "id": "open-all-files",
-      "title": "Open All Files",
+      "id": "bulk-problem-diagnostics",
+      "title": "Bulk Problem Diagnostics",
       "properties": {
-        "openAllFiles.limit": {
+        "bulkProblemDiagnostics.filesLimit": {
           "default": 30,
           "description": "Maximum number of files to open in one operation. If the folder has more files, the next command execution will start from where it finished last time.",
           "type": "number"
         },
-        "openAllFiles.openFiles": {
+        "bulkProblemDiagnostics.openFiles": {
           "default": "**",
           "description": "Files to open. Examples: '**' - all files, '**/*.{php,js}' - only PHP and JS files",
           "type": "string"
         },
-        "openAllFiles.excludeFiles": {
+        "bulkProblemDiagnostics.excludeFiles": {
           "type": "array",
           "items": {
             "type": "string"
@@ -87,17 +87,17 @@
           ],
           "description": "Configure glob patterns to exclude certain files and folders from opening. Relative paths are calculated from the workspace root (not the folder being opened)."
         },
-        "openAllFiles.autoExcludeFrameworkSuggestions": {
+        "bulkProblemDiagnostics.autoExcludeFrameworkSuggestions": {
           "default": true,
           "description": "Automatically detect other files to exclude for some common projects or frameworks",
           "type": "boolean"
         },
-        "openAllFiles.delay": {
+        "bulkProblemDiagnostics.delay": {
           "default": 200,
           "description": "Delay (in ms) between opening files to allow diagnostics to catch up with the newly loaded files",
           "type": "number"
         },
-        "openAllFiles.openForDiagnosticsOnly": {
+        "bulkProblemDiagnostics.openForDiagnosticsOnly": {
           "default": false,
           "description": "Open files for diagnostics only, do not show in editor. The 'Problems' view will display all problems found in these files.",
           "type": "boolean"

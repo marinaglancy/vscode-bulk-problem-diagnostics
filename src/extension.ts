@@ -7,8 +7,8 @@ let lastFolderIndex:number = 0;
 
 export function activate(context: ExtensionContext) {
 
-  const commandId = 'vscode-open-all-files.openAllFiles';
-  const commandId2 = 'vscode-open-all-files.openAllFilesContinue';
+  const commandId = 'vscode-bulk-problem-diagnostics.openAllFiles';
+  const commandId2 = 'vscode-bulk-problem-diagnostics.openAllFilesContinue';
   setLastFolder(null);
   context.subscriptions.push(
     commands.registerCommand(commandId, (uri) => openAllFiles(uri)));
@@ -24,13 +24,13 @@ export function deactivate() {}
 function setLastFolder(uri:Uri|null, idx:number = 0) {
   if (uri) {
     lastFolder = uri;
-    commands.executeCommand('setContext', 'openAllFiles.lastFolder', [lastFolder.fsPath]);
-    commands.executeCommand('setContext', 'openAllFiles.hasLastFolder', true);
+    commands.executeCommand('setContext', 'bulkProblemDiagnostics.lastFolder', [lastFolder.fsPath]);
+    commands.executeCommand('setContext', 'bulkProblemDiagnostics.hasLastFolder', true);
     lastFolderIndex = idx;
   } else {
     lastFolder = null;
-    commands.executeCommand('setContext', 'openAllFiles.lastFolder', []);
-    commands.executeCommand('setContext', 'openAllFiles.hasLastFolder', false);
+    commands.executeCommand('setContext', 'bulkProblemDiagnostics.lastFolder', []);
+    commands.executeCommand('setContext', 'bulkProblemDiagnostics.hasLastFolder', false);
     lastFolderIndex = 0;
   }
 }
@@ -47,7 +47,7 @@ async function openAllFiles(uri:Uri, continueLastFolder:boolean=false) {
   myStatusBarItem.text = `Retrieving all folder files...`;
   myStatusBarItem.show();
 
-  const maxFiles = (workspace.getConfiguration().get<number>('openAllFiles.limit') ?? 30);
+  const maxFiles = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.filesLimit') ?? 30);
   let files:Array<Uri> = await readDirectoryRecursively(uri.fsPath),
       firstIndex = 0, lastIndex = Math.min(maxFiles, files.length);
 
@@ -67,8 +67,8 @@ async function openAllFiles(uri:Uri, continueLastFolder:boolean=false) {
   }
   setLastFolder(files.length > lastIndex ? uri : null, lastIndex);
 
-  const diagnOnly:boolean = workspace.getConfiguration().get<boolean>('openAllFiles.openForDiagnosticsOnly') ?? false;
-  const delay:number = workspace.getConfiguration().get<number>('openAllFiles.delay') ?? 200;
+  const diagnOnly:boolean = workspace.getConfiguration().get<boolean>('bulkProblemDiagnostics.openForDiagnosticsOnly') ?? false;
+  const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 200;
   for (let i = firstIndex; i < lastIndex; i++) {
     try {
       if (diagnOnly) {

@@ -6,9 +6,9 @@ export async function readDirectoryRecursively(fsPath:string): Promise<Array<Uri
   const rootUri = getContainerRoot(fsPath);
   const relPath:string = path.relative(rootUri.fsPath, fsPath);
 
-  let excludeFiles:Array<string> = workspace.getConfiguration().get<Array<string>>('openAllFiles.excludeFiles') ?? [];
+  let excludeFiles:Array<string> = workspace.getConfiguration().get<Array<string>>('bulkProblemDiagnostics.excludeFiles') ?? [];
   excludeFiles = [...excludeFiles, ...await extraExcludedFiles(rootUri)];
-  const openFiles:string = workspace.getConfiguration().get<string>('openAllFiles.openFiles') ?? '**';
+  const openFiles:string = workspace.getConfiguration().get<string>('bulkProblemDiagnostics.openFiles') ?? '**';
 
   const files = await workspace.findFiles(
     path.join(relPath, openFiles),
