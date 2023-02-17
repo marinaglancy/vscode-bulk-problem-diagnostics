@@ -1,9 +1,10 @@
-import { ExtensionContext, StatusBarAlignment, StatusBarItem, Uri, commands, window, workspace } from 'vscode';
+import { ExtensionContext, StatusBarAlignment, StatusBarItem, Uri, commands, languages, window, workspace } from 'vscode';
 import { readDirectoryRecursively } from './fileutil';
 
 let myStatusBarItem: StatusBarItem;
 let lastFolder:Uri|null = null;
 let lastFolderIndex:number = 0;
+let globWatchedFiles:{[key: string]:Array<Uri>} = {};
 
 export function activate(context: ExtensionContext) {
 
@@ -17,9 +18,28 @@ export function activate(context: ExtensionContext) {
 
   myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
   context.subscriptions.push(myStatusBarItem);
+
+  languages.onDidChangeDiagnostics((e) => {
+    const maxSeverityLevel = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.maxSeverityLevel') ?? 2);
+    const search = (workspace.getConfiguration().get<string>('bulkProblemDiagnostics.errorMessageMatch') ?? '');
+    e.uris.filter(isWatched).forEach(uri => {
+      const diag = languages.getDiagnostics(uri)
+        .filter(d => d.severity < maxSeverityLevel && (!search.length || d.message.includes(search)));
+      diag.length && commands.executeCommand('vscode.open', uri);
+    });
+  });
 }
 
 export function deactivate() {}
+
+function isWatched(uri:Uri) {
+  for (let key in globWatchedFiles) {
+    for (let u of globWatchedFiles[key]) {
+      if (u.path === uri.path) { return true; }
+    }
+  }
+  return false;
+}
 
 function setLastFolder(uri:Uri|null, idx:number = 0) {
   if (uri) {
@@ -47,7 +67,7 @@ async function openAllFiles(uri:Uri, continueLastFolder:boolean=false) {
   myStatusBarItem.text = `Retrieving all folder files...`;
   myStatusBarItem.show();
 
-  const maxFiles = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.filesLimit') ?? 30);
+  const maxFiles = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.filesLimit') ?? 200);
   let files:Array<Uri> = await readDirectoryRecursively(uri.fsPath),
       firstIndex = 0, lastIndex = Math.min(maxFiles, files.length);
 
@@ -63,25 +83,27 @@ async function openAllFiles(uri:Uri, continueLastFolder:boolean=false) {
     }
   }
   if (files.length > maxFiles || firstIndex > 0) {
-    window.showInformationMessage(`Opening files ${firstIndex + 1}-${lastIndex} out of ${files.length}`);
+    window.showInformationMessage(`Analysing files ${firstIndex + 1}-${lastIndex} out of ${files.length}`);
   }
   setLastFolder(files.length > lastIndex ? uri : null, lastIndex);
 
-  const diagnOnly:boolean = workspace.getConfiguration().get<boolean>('bulkProblemDiagnostics.openForDiagnosticsOnly') ?? false;
-  const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 200;
-  for (let i = firstIndex; i < lastIndex; i++) {
+  const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 100;
+  let watchedList = [];
+  for (let j = firstIndex; j < lastIndex; j++) {
+    watchedList.push(files[j]);
+  }
+  const watchKey = (Math.random() + 1).toString(36).substring(7);
+  globWatchedFiles[watchKey] = watchedList;
+  for (let i = 0; i < watchedList.length; i++) {
     try {
-      if (diagnOnly) {
-        await workspace.openTextDocument(files[i]);
-      } else {
-        await commands.executeCommand('vscode.open', files[i]);
-      }
-      myStatusBarItem.text = `Opened ${i-firstIndex+1}/${lastIndex-firstIndex} files`;
+      await workspace.openTextDocument(watchedList[i]);
+      myStatusBarItem.text = `Analysing ${i+1}/${lastIndex-firstIndex} files`;
       delay > 0 && await sleep(delay);
     } catch (e) {
       console.error(e);
     };
   }
+  setTimeout(() => { delete globWatchedFiles[watchKey]; }, 15000);
 
   myStatusBarItem.hide();
 }

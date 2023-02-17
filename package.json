@@ -2,7 +2,7 @@
   "name": "bulk-problem-diagnostics",
   "displayName": "Bulk Problem Diagnostics",
   "description": "Opens all files in a folder and all subfolders in order to review problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "MarinaGlancy",
   "repository": {
     "type": "git",
@@ -21,11 +21,11 @@
     "commands": [
       {
         "command": "bulk-problem-diagnostics.openAllFiles",
-        "title": "Open all files for diagnostics"
+        "title": "Open all files with problems"
       },
       {
         "command": "bulk-problem-diagnostics.openAllFilesContinue",
-        "title": "Open all files for diagnostics (continue)"
+        "title": "Open all files with problems (continue)"
       }
     ],
     "menus": {
@@ -65,13 +65,13 @@
       "title": "Bulk Problem Diagnostics",
       "properties": {
         "bulkProblemDiagnostics.filesLimit": {
-          "default": 30,
-          "description": "Maximum number of files to open in one operation. If the folder has more files, the next command execution will start from where it finished last time.",
+          "default": 200,
+          "description": "Maximum number of files to analyse in one operation. If the folder has more files, the next command execution will start from where it finished last time.",
           "type": "number"
         },
         "bulkProblemDiagnostics.openFiles": {
           "default": "**",
-          "description": "Files to open. Examples: '**' - all files, '**/*.{php,js}' - only PHP and JS files",
+          "description": "Files to analyse. Examples: '**' - all files, '**/*.{php,js}' - only PHP and JS files",
           "type": "string"
         },
         "bulkProblemDiagnostics.excludeFiles": {
@@ -90,7 +90,7 @@
             "**/vendor/**",
             "**/.history/**"
           ],
-          "description": "Configure glob patterns to exclude certain files and folders from opening. Relative paths are calculated from the workspace root (not the folder being opened)."
+          "description": "Configure glob patterns to exclude certain files and folders from analysing. Relative paths are calculated from the workspace root (not the folder being analysed)."
         },
         "bulkProblemDiagnostics.autoExcludeFrameworkSuggestions": {
           "default": true,
@@ -98,14 +98,19 @@
           "type": "boolean"
         },
         "bulkProblemDiagnostics.delay": {
-          "default": 200,
-          "description": "Delay (in ms) between opening files to allow diagnostics to catch up with the newly loaded files",
+          "default": 100,
+          "description": "Delay (in ms) between analysing files to allow diagnostics to catch up with the newly loaded files",
           "type": "number"
         },
-        "bulkProblemDiagnostics.openForDiagnosticsOnly": {
-          "default": false,
-          "description": "Open files for diagnostics only, do not show in editor. The 'Problems' view will display all problems found in these files.",
-          "type": "boolean"
+        "bulkProblemDiagnostics.maxSeverityLevel": {
+          "default": 2,
+          "description": "Maximum problem severity level, file will only be open if it contains problems of this or lower levels (1 - errors, 2 - warnings, 3 - notices)",
+          "type": "number"
+        },
+        "bulkProblemDiagnostics.errorMessageMatch": {
+          "default": "",
+          "description": "If specified, will only open files that have problems that match this setting",
+          "type": "string"
         }
       }
     }
