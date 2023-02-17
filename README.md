@@ -18,7 +18,7 @@ and removes them from Problems view when too many files are open.
 When using extension for diagnostics, you can adjust some settings, for example, increase delay between
 opening new files and choose not to open them in editor.
 
-![Open All Files example](https://github.com/marinaglancy/vscode-open-all-files/blob/master/media/open-all-files.png)
+![Open All Files example](https://raw.githubusercontent.com/marinaglancy/vscode-open-all-files/master/media/open-all-files.png)
 
 ### Extension settings
 
