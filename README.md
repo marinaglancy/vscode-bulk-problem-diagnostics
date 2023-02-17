@@ -1,3 +1,5 @@
+[![Version](https://img.shields.io/visual-studio-marketplace/v/MarinaGlancy.bulk-problem-diagnostics)](https://marketplace.visualstudio.com/items?itemName=MarinaGlancy.bulk-problem-diagnostics)
+
 # VS Code extension "Bulk Problem Diagnostics"
 
 Opens all files in a folder and all subfolders recursively in order to
@@ -13,18 +15,18 @@ only shows diagnostics for the opened files and automatically unloads files
 and removes them from Problems view when too many files are open.
 
 - Open "Problems" view (Ctrl+Shift+M)
-- Right click on a folder in Explorer and choose "Open all files", this will open
-  first 30 files
+- Right click on a folder in Explorer and choose "Open all files for dianostics",
+  this will open first 30 files
 - Review the detected problems, make changes as needed
 - Close all open files (Ctrl+K W)
-- Right click on the folder again and choose "Open all files (continue)" or just
-  press `Alt+Ctrl+Shift+O`, this will open the next batch of files
+- Right click on the folder again and choose "Open all files for diagnostics (continue)"
+  or just press `Alt+Ctrl+Shift+O`, this will open the next batch of files
 - Rinse and repeat
 
 When using this extension for diagnostics you can adjust some settings, for example:
 increase the delay between opening new files and choosing not to open them in an editor.
 
-![Open All Files example](https://raw.githubusercontent.com/marinaglancy/vscode-bulk-problem-diagnostics/master/media/bulk-problem-diagnostics.png)
+![Example](https://raw.githubusercontent.com/marinaglancy/vscode-bulk-problem-diagnostics/master/media/bulk-problem-diagnostics.png)
 
 ### Extension settings
 

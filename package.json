@@ -1,8 +1,13 @@
 {
-  "name": "vscode-bulk-problem-diagnostics",
-  "displayName": "bulk-problem-diagnostics",
-  "description": "Opens all files in a folder and all subfolders recursively in order to review problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0",
+  "name": "bulk-problem-diagnostics",
+  "displayName": "Bulk Problem Diagnostics",
+  "description": "Opens all files in a folder and all subfolders in order to review problems. Splits large number of files in batches to prevent unloading.",
+  "version": "1.0.0",
+  "publisher": "MarinaGlancy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marinaglancy/vscode-bulk-problem-diagnostics"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -15,41 +20,41 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-bulk-problem-diagnostics.openAllFiles",
+        "command": "bulk-problem-diagnostics.openAllFiles",
         "title": "Open all files for diagnostics"
       },
       {
-        "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+        "command": "bulk-problem-diagnostics.openAllFilesContinue",
         "title": "Open all files for diagnostics (continue)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "command": "vscode-bulk-problem-diagnostics.openAllFiles",
+          "command": "bulk-problem-diagnostics.openAllFiles",
           "when": "explorerResourceIsFolder",
           "group": "explorerResourceIsFolder@1"
         },
         {
-          "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+          "command": "bulk-problem-diagnostics.openAllFilesContinue",
           "when": "explorerResourceIsFolder && resourcePath in bulkProblemDiagnostics.lastFolder",
           "group": "explorerResourceIsFolder@2"
         }
       ],
       "commandPalette": [
         {
-          "command": "vscode-bulk-problem-diagnostics.openAllFiles",
+          "command": "bulk-problem-diagnostics.openAllFiles",
           "when": "never"
         },
         {
-          "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+          "command": "bulk-problem-diagnostics.openAllFilesContinue",
           "when": "bulkProblemDiagnostics.hasLastFolder"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "vscode-bulk-problem-diagnostics.openAllFilesContinue",
+        "command": "bulk-problem-diagnostics.openAllFilesContinue",
         "key": "ctrl+shift+alt+o",
         "mac": "cmd+shift+alt+o",
         "when": "bulkProblemDiagnostics.hasLastFolder"

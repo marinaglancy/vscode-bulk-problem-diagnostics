@@ -7,8 +7,8 @@ let lastFolderIndex:number = 0;
 
 export function activate(context: ExtensionContext) {
 
-  const commandId = 'vscode-bulk-problem-diagnostics.openAllFiles';
-  const commandId2 = 'vscode-bulk-problem-diagnostics.openAllFilesContinue';
+  const commandId = 'bulk-problem-diagnostics.openAllFiles';
+  const commandId2 = 'bulk-problem-diagnostics.openAllFilesContinue';
   setLastFolder(null);
   context.subscriptions.push(
     commands.registerCommand(commandId, (uri) => openAllFiles(uri)));
