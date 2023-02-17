@@ -2,6 +2,10 @@
 
 All notable changes to the "Bulk Problem Diagnostics" extension will be documented in this file.
 
+## [1.0.2]
+
+- Allow to run the command on the whole project, not just one folder
+
 ## [1.0.1]
 
 - Open only files with problems

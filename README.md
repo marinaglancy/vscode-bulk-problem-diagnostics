@@ -2,7 +2,7 @@
 
 # VS Code extension "Bulk Problem Diagnostics"
 
-Opens all files with problems in a folder. Splits large number of files in batches to prevent unloading.
+Opens all files with problems. Splits large number of files in batches to prevent unloading.
 
 Inspired by the issue:
 https://github.com/microsoft/vscode/issues/13953
@@ -16,6 +16,8 @@ and removes them from Problems view when too many files are open.
 - Open "Problems" view (Ctrl+Shift+M)
 - Right click on a folder in Explorer and choose "Open all files with problems",
   this will analyse first 200 files and open the ones that have problems
+- **To run the command "Open all files with problems" on the whole workspace
+  choose it from the command menu (Ctrl+Shift+P)**
 - Review the detected problems, make changes as needed
 - Close all open files (Ctrl+K W) if needed
 - Right click on the folder again and choose "Open all files with problems (continue)"

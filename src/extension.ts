@@ -63,7 +63,15 @@ async function openAllFilesContinue() {
   }
 }
 
-async function openAllFiles(uri:Uri, continueLastFolder:boolean=false) {
+async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=false) {
+  if (uri === null) {
+    if (workspace.workspaceFolders && workspace.workspaceFolders.length) {
+      uri = workspace.workspaceFolders[0].uri;
+    } else {
+      return;
+    }
+  }
+
   myStatusBarItem.text = `Retrieving all folder files...`;
   myStatusBarItem.show();
 

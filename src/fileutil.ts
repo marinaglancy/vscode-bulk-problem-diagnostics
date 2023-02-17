@@ -25,7 +25,7 @@ export function isSubDir(parent:string, dir:string): boolean {
 function getContainerRoot(fsPath:string): Uri {
   if (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0)) {
     for (let f of workspace.workspaceFolders) {
-      if (isSubDir(f.uri.fsPath, fsPath)) {
+      if (f.uri.fsPath === fsPath || isSubDir(f.uri.fsPath, fsPath)) {
         return f.uri;
       }
     }
