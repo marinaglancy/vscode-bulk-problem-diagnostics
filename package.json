@@ -2,7 +2,7 @@
   "name": "bulk-problem-diagnostics",
   "displayName": "Bulk Problem Diagnostics",
   "description": "Opens all files in a folder and all subfolders in order to review problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "MarinaGlancy",
   "repository": {
     "type": "git",

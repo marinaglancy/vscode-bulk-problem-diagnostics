@@ -1,4 +1,5 @@
-import { ExtensionContext, StatusBarAlignment, StatusBarItem, Uri, commands, languages, window, workspace } from 'vscode';
+import { ExtensionContext, StatusBarAlignment, StatusBarItem, Uri, commands,
+  languages, window, workspace, Tab, TabInputText } from 'vscode';
 import { readDirectoryRecursively } from './fileutil';
 
 let myStatusBarItem: StatusBarItem;
@@ -20,20 +21,24 @@ export function activate(context: ExtensionContext) {
   context.subscriptions.push(myStatusBarItem);
 
   languages.onDidChangeDiagnostics((e) => {
-    const maxSeverityLevel = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.maxSeverityLevel') ?? 2);
-    const search = (workspace.getConfiguration().get<string>('bulkProblemDiagnostics.errorMessageMatch') ?? '');
-    e.uris.filter(isWatched).forEach(uri => {
-      const diag = languages.getDiagnostics(uri)
-        .filter(d => d.severity < maxSeverityLevel && (!search.length || d.message.includes(search)));
-      if (diag.length) {
-        unWatch(uri);
-        commands.executeCommand('vscode.open', uri);
-      }
-    });
+    e.uris.filter(isWatched).forEach(uri => showDocumentIfItHasProblems(uri));
   });
 }
 
 export function deactivate() {}
+
+function showDocumentIfItHasProblems(uri:Uri) {
+  const maxSeverityLevel = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.maxSeverityLevel') ?? 2);
+  const search = (workspace.getConfiguration().get<string>('bulkProblemDiagnostics.errorMessageMatch') ?? '');
+  const diag = languages.getDiagnostics(uri)
+    .filter(d => d.severity < maxSeverityLevel && (!search.length || d.message.includes(search)));
+  if (diag.length) {
+    unWatch(uri);
+    commands.executeCommand('vscode.open', uri);
+    return true;
+  }
+  return false;
+}
 
 function isWatched(uri:Uri) {
   for (let key in globWatchedFiles) {
@@ -110,19 +115,58 @@ async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=fals
   const watchKey = (Math.random() + 1).toString(36).substring(7);
   globWatchedFiles[watchKey] = watchedList.reduce((p, u) => ({...p, [u.path]: true}), {});
   for (let i = 0; i < watchedList.length; i++) {
-    try {
-      await workspace.openTextDocument(watchedList[i]);
-      myStatusBarItem.text = `Analysing ${i+1}/${lastIndex-firstIndex} files`;
-      delay > 0 && await sleep(delay);
-    } catch (e) {
-      console.error(e);
-    };
+    myStatusBarItem.text = `Analysing ${i+1}/${lastIndex-firstIndex} files`;
+    await ensureDocumentAnalysed(watchedList[i]);
+    delay > 0 && await sleep(delay);
   }
   setTimeout(() => { delete globWatchedFiles[watchKey]; }, 15000);
 
   myStatusBarItem.hide();
 }
 
+async function ensureDocumentAnalysed(uri:Uri) {
+  if (showDocumentIfItHasProblems(uri)) {
+    // We already know it has problems.
+    return;
+  }
+  let res;
+  try {
+    let tds = workspace.textDocuments.filter(td => td.uri.path === uri.path);
+    if (!tds.length) {
+      // The document is not loaded in vscode.
+      // By calling workspace.openTextDocument we fire the onDidOpenTextDocument that will
+      // prompt other extensions to recalculate and register diagnostics.
+      // This command will load the document but not show it in a tab.
+      await workspace.openTextDocument(uri);
+    } else {
+      // This file is already loaded, we can not call workspace.openTextDocument because it will not fire event.
+      if (findFileInTabGroups(uri)) {
+        // Document found in the tab groups, switch to it to ensure the event is fired and it is analysed.
+        await commands.executeCommand('vscode.open', uri);
+      } else {
+        // Document is loaded but not in any tab groups. Open it, close and load again.
+        // Yes, this causes annoying blinking if the "Open all files with problems" is executed several
+        // times on the small folder but it's better than not to report diagnostics.
+        await commands.executeCommand('vscode.open', uri);
+        let tab:Tab|null = findFileInTabGroups(uri);
+        tab && await window.tabGroups.close(tab);
+        await workspace.openTextDocument(uri);
+      }
+    }
+  } catch (e) {
+    if (!(e instanceof Error) || !e.message.includes('File seems to be binary')) { console.error(e); }
+  };
+}
+
 function sleep(ms:number) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function findFileInTabGroups(uri:Uri):Tab|null {
+  const tabs: Tab[] = window.tabGroups.all.map(tg => tg.tabs).flat();
+  const index = tabs.findIndex(tab => tab.input instanceof TabInputText && tab.input.uri.path === uri.path);
+  if (index !== -1) {
+      return tabs[index];
+  }
+  return null;
 }

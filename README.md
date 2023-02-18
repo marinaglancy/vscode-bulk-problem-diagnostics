@@ -9,7 +9,7 @@ https://github.com/microsoft/vscode/issues/13953
 
 ## Using the extension to review diagnostics
 
-This extension is essential for reviewing problems in big projects. VS Code
+This extension is essential for reviewing problems on big projects since VS Code
 only shows diagnostics for the opened files and automatically unloads files
 and removes them from Problems view when too many files are open.
 
@@ -17,7 +17,7 @@ and removes them from Problems view when too many files are open.
 - Right click on a folder in Explorer and choose "Open all files with problems",
   this will analyse first 200 files and open the ones that have problems
 - **To run the command "Open all files with problems" on the whole workspace
-  choose it from the command menu (Ctrl+Shift+P)**
+  choose it from the Command Palette (Ctrl+Shift+P)**
 - Review the detected problems, make changes as needed
 - Close all open files (Ctrl+K W) if needed
 - Right click on the folder again and choose "Open all files with problems (continue)"
