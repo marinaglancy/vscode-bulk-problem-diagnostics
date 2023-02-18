@@ -4,7 +4,7 @@ import { readDirectoryRecursively } from './fileutil';
 let myStatusBarItem: StatusBarItem;
 let lastFolder:Uri|null = null;
 let lastFolderIndex:number = 0;
-let globWatchedFiles:{[key: string]:Array<Uri>} = {};
+let globWatchedFiles:{[key: string]:{[file:string]:boolean}} = {};
 
 export function activate(context: ExtensionContext) {
 
@@ -25,7 +25,10 @@ export function activate(context: ExtensionContext) {
     e.uris.filter(isWatched).forEach(uri => {
       const diag = languages.getDiagnostics(uri)
         .filter(d => d.severity < maxSeverityLevel && (!search.length || d.message.includes(search)));
-      diag.length && commands.executeCommand('vscode.open', uri);
+      if (diag.length) {
+        unWatch(uri);
+        commands.executeCommand('vscode.open', uri);
+      }
     });
   });
 }
@@ -34,11 +37,15 @@ export function deactivate() {}
 
 function isWatched(uri:Uri) {
   for (let key in globWatchedFiles) {
-    for (let u of globWatchedFiles[key]) {
-      if (u.path === uri.path) { return true; }
-    }
+    if (globWatchedFiles[key][uri.path]) { return true; }
   }
   return false;
+}
+
+function unWatch(uri:Uri) {
+  for (let key in globWatchedFiles) {
+    delete globWatchedFiles[key][uri.path];
+  }
 }
 
 function setLastFolder(uri:Uri|null, idx:number = 0) {
@@ -101,7 +108,7 @@ async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=fals
     watchedList.push(files[j]);
   }
   const watchKey = (Math.random() + 1).toString(36).substring(7);
-  globWatchedFiles[watchKey] = watchedList;
+  globWatchedFiles[watchKey] = watchedList.reduce((p, u) => ({...p, [u.path]: true}), {});
   for (let i = 0; i < watchedList.length; i++) {
     try {
       await workspace.openTextDocument(watchedList[i]);
