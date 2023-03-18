@@ -2,6 +2,9 @@
 
 All notable changes to the "Bulk Problem Diagnostics" extension will be documented in this file.
 
+## [1.0.5]
+- changes to README and a new icon
+
 ## [1.0.4]
 - Fixed a problem when files are not re-analysed if the command runs on a small folder
   for the second time. As a downside, on consequtive runs the screen might be blinking

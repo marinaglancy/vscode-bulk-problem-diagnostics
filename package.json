@@ -1,13 +1,14 @@
 {
   "name": "bulk-problem-diagnostics",
   "displayName": "Bulk Problem Diagnostics",
-  "description": "Opens all files in a folder and all subfolders in order to review problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0.4",
+  "description": "Opens all files with problems. Splits large number of files in batches to prevent unloading.",
+  "version": "1.0.5",
   "publisher": "MarinaGlancy",
   "repository": {
     "type": "git",
     "url": "https://github.com/marinaglancy/vscode-bulk-problem-diagnostics"
   },
+  "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.75.0"
   },
