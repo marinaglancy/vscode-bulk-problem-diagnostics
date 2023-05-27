@@ -2,7 +2,7 @@
   "name": "bulk-problem-diagnostics",
   "displayName": "Bulk Problem Diagnostics",
   "description": "Opens all files with problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "MarinaGlancy",
   "repository": {
     "type": "git",

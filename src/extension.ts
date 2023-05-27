@@ -1,5 +1,5 @@
 import { ExtensionContext, Uri, commands,
-  languages, window, workspace, Tab, TabInputText, ProgressLocation, CancellationToken, Progress } from 'vscode';
+  languages, window, workspace, Tab, TabInputText, ProgressLocation, CancellationToken, Progress, Diagnostic } from 'vscode';
 import { readDirectoryRecursively } from './fileutil';
 
 let lastFolder:Uri|null = null;
@@ -27,7 +27,14 @@ function showDocumentIfItHasProblems(uri:Uri) {
   const maxSeverityLevel = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.maxSeverityLevel') ?? 2);
   const search = (workspace.getConfiguration().get<string>('bulkProblemDiagnostics.errorMessageMatch') ?? '');
   const diag = languages.getDiagnostics(uri)
-    .filter(d => d.severity < maxSeverityLevel && (!search.length || d.message.includes(search)));
+    .filter((d:Diagnostic) => {
+      if (d.severity >= maxSeverityLevel) { return false; }
+      if (!search.length) { return true; }
+      if (d.message.includes(search)) { return true; }
+      if (d.code && typeof d.code === 'object' && d.code.value && `${d.code.value}`.includes(search)) { return true; }
+      if (d.code && typeof d.code !== 'object' && `${d.code}`.includes(search)) { return true; }
+      return false;
+    });
   if (diag.length) {
     unWatch(uri);
     commands.executeCommand('vscode.open', uri);
@@ -94,6 +101,7 @@ async function openAllFilesWithProgress(uri:Uri|undefined = undefined, continueL
     }
   }
 
+  commands.executeCommand('workbench.action.problems.focus');
   title = `Analysing ${files.length} files`;
   if (files.length > maxFiles || firstIndex > 0) {
     title = `Analysing files ${firstIndex + 1}-${lastIndex} out of ${files.length}`;

@@ -7,22 +7,20 @@ Opens all files with problems. Splits large number of files in batches to preven
 Inspired by the issue:
 https://github.com/microsoft/vscode/issues/13953
 
-## Using the extension to review diagnostics
-
-This extension is essential for reviewing problems on big projects since VS Code
-only shows diagnostics for the opened files and automatically unloads files
+Normally VS Code only shows diagnostics for the opened files and automatically unloads files
 and removes them from Problems view when too many files are open.
 
-- Open "Problems" view (Ctrl+Shift+M)
-- Right click on a folder in Explorer and choose "Open all files with problems",
-  this will analyse first 200 files and open the ones that have problems
-- **To run the command "Open all files with problems" on the whole workspace
-  choose it from the Command Palette (Ctrl+Shift+P)**
-- Review the detected problems, make changes as needed
-- Close all open files (Ctrl+K W) if needed
-- Right click on the folder again and choose "Open all files with problems (continue)"
-  or just press `Alt+Ctrl+Shift+O`, this will analyse the next batch of files
-- Rinse and repeat
+This extension iterates through all files, opens them one by one, waits a little and then closes
+files that do not have problems.
+
+To analyse first batch of files (by default 200):
+- Right click on a folder in Explorer and choose **"Open all files with problems"**, or
+- Choose command **"Open all files with problems"** from the Command Palette (Ctrl+Shift+P)
+
+To continue:
+- Right click on the folder again and choose **"Open all files with problems (continue)"**, or
+- Press `Alt+Ctrl+Shift+O` or select **"Open all files with problems (continue)"** from the Command Palette, or
+- Press "Continue" in the notification that appears after the first command execution
 
 ![Example](https://raw.githubusercontent.com/marinaglancy/vscode-bulk-problem-diagnostics/master/media/bulk-problem-diagnostics.png)
 

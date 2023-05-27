@@ -4,6 +4,8 @@ All notable changes to the "Bulk Problem Diagnostics" extension will be document
 
 ## [1.0.6]
 - Added progress bar, cancel button and remaining time countdown
+- Allow to search in error codes as well as error messages
+- Automatically open Problems View when the command is executed
 
 ## [1.0.5]
 - changes to README and a new icon
