@@ -2,6 +2,9 @@
 
 All notable changes to the "Bulk Problem Diagnostics" extension will be documented in this file.
 
+## [1.0.6]
+- Added progress bar, cancel button and remaining time countdown
+
 ## [1.0.5]
 - changes to README and a new icon
 

@@ -1,8 +1,7 @@
-import { ExtensionContext, StatusBarAlignment, StatusBarItem, Uri, commands,
-  languages, window, workspace, Tab, TabInputText } from 'vscode';
+import { ExtensionContext, Uri, commands,
+  languages, window, workspace, Tab, TabInputText, ProgressLocation, CancellationToken, Progress } from 'vscode';
 import { readDirectoryRecursively } from './fileutil';
 
-let myStatusBarItem: StatusBarItem;
 let lastFolder:Uri|null = null;
 let lastFolderIndex:number = 0;
 let globWatchedFiles:{[key: string]:{[file:string]:boolean}} = {};
@@ -13,12 +12,9 @@ export function activate(context: ExtensionContext) {
   const commandId2 = 'bulk-problem-diagnostics.openAllFilesContinue';
   setLastFolder(null);
   context.subscriptions.push(
-    commands.registerCommand(commandId, (uri) => openAllFiles(uri)));
+    commands.registerCommand(commandId, (uri) => openAllFilesWithProgress(uri)));
   context.subscriptions.push(
     commands.registerCommand(commandId2, () => openAllFilesContinue()));
-
-  myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100);
-  context.subscriptions.push(myStatusBarItem);
 
   languages.onDidChangeDiagnostics((e) => {
     e.uris.filter(isWatched).forEach(uri => showDocumentIfItHasProblems(uri));
@@ -67,30 +63,26 @@ function setLastFolder(uri:Uri|null, idx:number = 0) {
   }
 }
 
-async function openAllFilesContinue() {
+function openAllFilesContinue() {
   if (lastFolder) {
-    await openAllFiles(lastFolder, true);
+    openAllFilesWithProgress(lastFolder, true);
   } else {
     window.showErrorMessage(`No more files to open`);
   }
 }
 
-async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=false) {
-  if (uri === null) {
-    if (workspace.workspaceFolders && workspace.workspaceFolders.length) {
-      uri = workspace.workspaceFolders[0].uri;
-    } else {
-      return;
-    }
-  }
+async function openAllFilesWithProgress(uri:Uri|undefined = undefined, continueLastFolder:boolean=false) {
+  uri = uri || (workspace.workspaceFolders ? workspace.workspaceFolders[0]?.uri : undefined);
+  if (!uri) { return; }
 
-  myStatusBarItem.text = `Retrieving all folder files...`;
-  myStatusBarItem.show();
+  const location = ProgressLocation.Notification, cancellable = true;
+  let title = 'Retrieving list of files...';
+  let files:Array<Uri>|undefined = await window.withProgress({title, location, cancellable},
+    async (progress, token) => uri ? await readDirectoryRecursively(uri.fsPath, token) : undefined);
+  if (!files) { return; }
 
   const maxFiles = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.filesLimit') ?? 200);
-  let files:Array<Uri> = await readDirectoryRecursively(uri.fsPath),
-      firstIndex = 0, lastIndex = Math.min(maxFiles, files.length);
-
+  let firstIndex = 0, lastIndex = Math.min(maxFiles, files.length);
   if (continueLastFolder) {
     if (lastFolderIndex < files.length) {
       firstIndex = lastFolderIndex;
@@ -98,14 +90,37 @@ async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=fals
     } else {
       window.showErrorMessage(`No more files to open`);
       setLastFolder(null);
-      myStatusBarItem.hide();
       return;
     }
   }
+
+  title = `Analysing ${files.length} files`;
   if (files.length > maxFiles || firstIndex > 0) {
-    window.showInformationMessage(`Analysing files ${firstIndex + 1}-${lastIndex} out of ${files.length}`);
+    title = `Analysing files ${firstIndex + 1}-${lastIndex} out of ${files.length}`;
   }
-  setLastFolder(files.length > lastIndex ? uri : null, lastIndex);
+  lastIndex = await window.withProgress({ title, location, cancellable },
+  async (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => {
+    return await openAllFiles(files ?? [], firstIndex, lastIndex, progress, token);
+  });
+
+  if (files.length > lastIndex && uri) {
+    setLastFolder(uri, lastIndex);
+    window.showInformationMessage(
+      `Finished analysing files ${firstIndex + 1}-${lastIndex} out of ${files.length}.`+
+      ` To continue select "Open all files with problems (continue)" from the Command Palette or press "Continue".`,
+      ...["Continue"]
+    ).then((action) => {
+      if (action === "Continue") {
+        openAllFilesContinue();
+      }
+    });
+  } else {
+    setLastFolder(null);
+  }
+}
+
+async function openAllFiles(files:Array<Uri>, firstIndex:number, lastIndex:number,
+    progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken): Promise<number> {
 
   const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 100;
   let watchedList = [];
@@ -114,14 +129,17 @@ async function openAllFiles(uri:Uri|null = null, continueLastFolder:boolean=fals
   }
   const watchKey = (Math.random() + 1).toString(36).substring(7);
   globWatchedFiles[watchKey] = watchedList.reduce((p, u) => ({...p, [u.path]: true}), {});
-  for (let i = 0; i < watchedList.length; i++) {
-    myStatusBarItem.text = `Analysing ${i+1}/${lastIndex-firstIndex} files`;
+  let i = 0, timeStart = Date.now();
+  for (i = 0; i < watchedList.length; i++) {
+    if (token.isCancellationRequested) { break; }
+    const remainingTime:number = i > 20 ? ((Date.now() - timeStart) * (lastIndex - firstIndex - i) / i) : 0;
+    progress.report({message: remainingTime ? "Approximate time left - " + formatTimeLeft(remainingTime): '',
+      increment: 100 / (lastIndex-firstIndex)});
     await ensureDocumentAnalysed(watchedList[i]);
     delay > 0 && await sleep(delay);
   }
   setTimeout(() => { delete globWatchedFiles[watchKey]; }, 15000);
-
-  myStatusBarItem.hide();
+  return i + firstIndex;
 }
 
 async function ensureDocumentAnalysed(uri:Uri) {
@@ -169,4 +187,18 @@ function findFileInTabGroups(uri:Uri):Tab|null {
       return tabs[index];
   }
   return null;
+}
+
+function formatTimeLeft(ms:number):string {
+  const f = (n:number, addZero:boolean = true):string => addZero && n < 10 ? '0' + n : '' + n;
+  const time = [
+    ...(ms > 3600000 ? [f(Math.floor(ms / 3600000), false)+'h'] : []),
+    f(Math.floor(ms / 60000) % 60, ms > 3600000),
+    f(Math.floor(ms / 1000) % 60),
+  ];
+  if (ms/60000 > 2) {
+    // Do not show seconds if over 2 minutes left.
+    return time.slice(0, -1).join(' ')+'m';
+  }
+  return time.join(':') + 's';
 }

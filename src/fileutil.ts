@@ -1,8 +1,8 @@
 import * as path from 'path';
-import { RelativePattern, Uri, window, workspace } from 'vscode';
+import { CancellationToken, RelativePattern, Uri, window, workspace } from 'vscode';
 import { extraExcludedFiles } from './extraExcludedfiles';
 
-export async function readDirectoryRecursively(fsPath:string): Promise<Array<Uri>> {
+export async function readDirectoryRecursively(fsPath:string, token:CancellationToken): Promise<Array<Uri>|undefined> {
   const rootUri = getContainerRoot(fsPath);
   const relPath:string = path.relative(rootUri.fsPath, fsPath);
 
@@ -12,8 +12,11 @@ export async function readDirectoryRecursively(fsPath:string): Promise<Array<Uri
 
   const files = await workspace.findFiles(
     path.join(relPath, openFiles),
-    excludeFiles.length ? new RelativePattern(rootUri, '{'+excludeFiles.join(',')+'}') : null
+    excludeFiles.length ? new RelativePattern(rootUri, '{'+excludeFiles.join(',')+'}') : null,
+    undefined,
+    token
   );
+  if (token.isCancellationRequested) { return undefined; }
   return files.sort((n1, n2) => n1.path.localeCompare(n2.path));
 }
 
