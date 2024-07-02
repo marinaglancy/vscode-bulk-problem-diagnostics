@@ -2,6 +2,14 @@
 
 All notable changes to the "Bulk Problem Diagnostics" extension will be documented in this file.
 
+## [1.0.7]
+- Due to the recent changes in some extensions (including ESLint 3.0.8), the previous method of
+  opening the files in the background does not work anymore. Now the extension will open files
+  in the editor and close them after a delay. This means there is a lot of "blinking" on the
+  screen as each file is being opened and closed. #4
+- Added a new setting "Wait Before Closing", by default 3000ms.
+- Default value for the "Delay" setting was raised to 200ms.
+
 ## [1.0.6]
 - Added progress bar, cancel button and remaining time countdown
 - Allow to search in error codes as well as error messages

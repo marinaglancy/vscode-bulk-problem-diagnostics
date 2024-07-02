@@ -2,7 +2,7 @@
   "name": "bulk-problem-diagnostics",
   "displayName": "Bulk Problem Diagnostics",
   "description": "Opens all files with problems. Splits large number of files in batches to prevent unloading.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "MarinaGlancy",
   "repository": {
     "type": "git",
@@ -95,11 +95,16 @@
           "type": "boolean"
         },
         "bulkProblemDiagnostics.delay": {
-          "default": 100,
+          "default": 200,
           "description": "Delay (in ms) between analysing files to allow diagnostics to catch up with the newly loaded files",
           "type": "number"
         },
-        "bulkProblemDiagnostics.maxSeverityLevel": {
+        "bulkProblemDiagnostics.waitBeforeClosing": {
+          "default": 3000,
+          "description": "Time to wait (in ms) before closing a file that did not have problems. Increase if you have slow extensions that take longer to report the problems",
+          "type": "number"
+        },
+          "bulkProblemDiagnostics.maxSeverityLevel": {
           "default": 2,
           "description": "Maximum problem severity level, file will only be open if it contains problems of this or lower levels (1 - errors, 2 - warnings, 3 - notices)",
           "type": "number"

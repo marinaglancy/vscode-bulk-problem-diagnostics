@@ -23,7 +23,7 @@ export function activate(context: ExtensionContext) {
 
 export function deactivate() {}
 
-function showDocumentIfItHasProblems(uri:Uri) {
+async function showDocumentIfItHasProblems(uri:Uri) {
   const maxSeverityLevel = (workspace.getConfiguration().get<number>('bulkProblemDiagnostics.maxSeverityLevel') ?? 2);
   const search = (workspace.getConfiguration().get<string>('bulkProblemDiagnostics.errorMessageMatch') ?? '');
   const diag = languages.getDiagnostics(uri)
@@ -37,7 +37,8 @@ function showDocumentIfItHasProblems(uri:Uri) {
     });
   if (diag.length) {
     unWatch(uri);
-    commands.executeCommand('vscode.open', uri);
+    await commands.executeCommand('vscode.open', uri);
+    await commands.executeCommand('workbench.action.keepEditor', uri);
     return true;
   }
   return false;
@@ -130,7 +131,8 @@ async function openAllFilesWithProgress(uri:Uri|undefined = undefined, continueL
 async function openAllFiles(files:Array<Uri>, firstIndex:number, lastIndex:number,
     progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken): Promise<number> {
 
-  const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 100;
+  const delay:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.delay') ?? 200;
+  const waitBeforeClosing:number = workspace.getConfiguration().get<number>('bulkProblemDiagnostics.waitBeforeClosing') ?? 3000;
   let watchedList = [];
   for (let j = firstIndex; j < lastIndex; j++) {
     watchedList.push(files[j]);
@@ -143,41 +145,33 @@ async function openAllFiles(files:Array<Uri>, firstIndex:number, lastIndex:numbe
     const remainingTime:number = i > 20 ? ((Date.now() - timeStart) * (lastIndex - firstIndex - i) / i) : 0;
     progress.report({message: remainingTime ? "Approximate time left - " + formatTimeLeft(remainingTime): '',
       increment: 100 / (lastIndex-firstIndex)});
-    await ensureDocumentAnalysed(watchedList[i]);
+    await ensureDocumentAnalysed(watchedList[i], waitBeforeClosing);
     delay > 0 && await sleep(delay);
   }
   setTimeout(() => { delete globWatchedFiles[watchKey]; }, 15000);
   return i + firstIndex;
 }
 
-async function ensureDocumentAnalysed(uri:Uri) {
-  if (showDocumentIfItHasProblems(uri)) {
+async function ensureDocumentAnalysed(uri:Uri, waitBeforeClosing:number) {
+  if (await showDocumentIfItHasProblems(uri)) {
     // We already know it has problems.
     return;
   }
-  let res;
   try {
-    let tds = workspace.textDocuments.filter(td => td.uri.path === uri.path);
-    if (!tds.length) {
-      // The document is not loaded in vscode.
-      // By calling workspace.openTextDocument we fire the onDidOpenTextDocument that will
-      // prompt other extensions to recalculate and register diagnostics.
-      // This command will load the document but not show it in a tab.
-      await workspace.openTextDocument(uri);
+    if (findFileInTabGroups(uri)) {
+      // Document found in the tab groups, switch to it to ensure the event is fired and it is analysed.
+      await commands.executeCommand('vscode.open', uri);
     } else {
-      // This file is already loaded, we can not call workspace.openTextDocument because it will not fire event.
-      if (findFileInTabGroups(uri)) {
-        // Document found in the tab groups, switch to it to ensure the event is fired and it is analysed.
-        await commands.executeCommand('vscode.open', uri);
-      } else {
-        // Document is loaded but not in any tab groups. Open it, close and load again.
-        // Yes, this causes annoying blinking if the "Open all files with problems" is executed several
-        // times on the small folder but it's better than not to report diagnostics.
-        await commands.executeCommand('vscode.open', uri);
-        let tab:Tab|null = findFileInTabGroups(uri);
-        tab && await window.tabGroups.close(tab);
-        await workspace.openTextDocument(uri);
-      }
+      // Open document (not as preview), wait 10 times the delay interval and close it if it has no problems.
+      await workspace.openTextDocument(uri); // this will throw an error if the file is binary.
+      const res = await commands.executeCommand('vscode.open', uri); // open the document in the editor and switch to it.
+      await commands.executeCommand("workbench.action.keepEditor", uri); // make sure the document is not opened in preview mode.
+      setTimeout(async () => {
+        if (!(await showDocumentIfItHasProblems(uri))) {
+          let tab:Tab|null = findFileInTabGroups(uri);
+          tab && await window.tabGroups.close(tab);
+        }
+      }, waitBeforeClosing);
     }
   } catch (e) {
     if (!(e instanceof Error) || !e.message.includes('File seems to be binary')) { console.error(e); }
